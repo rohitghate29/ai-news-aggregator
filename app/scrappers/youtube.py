@@ -45,6 +45,8 @@ class YoutubeScrapper:
     videos = []
 
     for entry in feed.entries:
+      if "/shorts/" in entry.link:
+        continue
       published_time = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
 
       if published_time >= cutoff_time:
@@ -70,7 +72,7 @@ class YoutubeScrapper:
       print(f"Error fetching transcript for {video_id}: {e}")
       return None
     
-  def scrape_channel(self, channel_id: str, hours: int = 150) -> list[ChannelVideo]:
+  def scrape_channel(self, channel_id: str, hours: int = 24) -> list[ChannelVideo]:
     videos_data = self.get_latest_videos(channel_id, hours=hours)
     videos = []
     for data in videos_data:
