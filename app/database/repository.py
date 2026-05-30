@@ -118,6 +118,20 @@ class Repository:
       self.session.commit()
       return True
     return False
+  
+  def get_youtube_videos_without_transcript(self, limit: Optional[int] = None) -> List[YoutubeVideo]:
+    query = self.session.query(YoutubeVideo).filter(YoutubeVideo.transcript.is_(None))
+    if limit:
+      query = query.limit(limit)
+    return query.all()
+    
+  def update_youtube_video_transcript(self, video_id: str, transcript: str) -> bool:
+    video = self.session.query(YoutubeVideo).filter_by(video_id=video_id).first()
+    if video:
+      video.transcript = transcript
+      self.session.commit()
+      return True
+    return False
 
   def get_articles_without_digest(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
       articles = []

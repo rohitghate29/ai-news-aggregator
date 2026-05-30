@@ -1,16 +1,18 @@
-from app.runner import run_scrappers
+from app.daily_runner import run_daily_pipeline
 
-def main(hours: int = 24):
-  results = run_scrappers(hours)
-
-  print(f"\n=== Scrapping Results (last ({hours} hours) ===")
-  print(f"Youtube Videos: {len(results['youtube'])}")
-  print(f"Anthropic Articles: {len(results['anthropic'])}")
-
-  return results
+def main(hours: int = 24, top_n: int = 10):
+  return run_daily_pipeline(hours, top_n)
 
 
 if __name__ == "__main__":
   import sys
-  hours = int(sys.argv[1]) if len(sys.argv) > 1 else 24
-  main(hours)
+  hours = 24
+  top_n = 10
+
+  if len(sys.argv) > 1:
+    hours = int(sys.argv[1])
+  if len(sys.argv) > 2:
+    top_n = int(sys.argv[2])
+  
+  result = main(hours, top_n)
+  exit(0 if result["success"] else 1)

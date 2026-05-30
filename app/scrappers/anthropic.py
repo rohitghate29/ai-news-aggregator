@@ -36,7 +36,7 @@ class AnthropicScrapper:
         if not published_parsed:
           continue
         published_time = datetime(*published_parsed[:6], tzinfo=timezone.utc)
-        if published_time >= cutoff_time:
+        if published_time < cutoff_time:
           break
         guid = entry.get("id", entry.get("link", ""))
         if guid not in seen_guids:

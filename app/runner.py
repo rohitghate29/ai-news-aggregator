@@ -35,17 +35,17 @@ def run_scrappers(hours: int = 24) -> dict:
 
   if anthropic_articles:
     article_dicts = [
-    {
-      "guid": a.guid,
-      "title": a.title,
-      "url": a.url,
-      "published_at": a.published_at,
-      "description": a.description,
-      "category": a.category,
-    }
-    for a in anthropic_articles
-  ]
-  repo.bulk_create_anthropic_articles(article_dicts)
+      {
+        "guid": a.guid,
+        "title": a.title,
+        "url": a.url,
+        "published_at": a.published_at,
+        "description": a.description,
+        "category": a.category,
+      }
+      for a in anthropic_articles
+    ]
+    repo.bulk_create_anthropic_articles(article_dicts)
 
   return {
     "youtube": youtube_videos,
