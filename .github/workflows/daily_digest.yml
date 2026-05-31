@@ -1,6 +1,8 @@
 name: Daily AI News Aggregator Digest
 
 on:
+  push:
+    branches: [ "deployment" ]
   schedule:
     # Runs at 08:00 UTC (13:30 IST) every day
     - cron: '0 8 * * *'
