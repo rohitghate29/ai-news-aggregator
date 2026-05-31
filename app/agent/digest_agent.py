@@ -25,7 +25,7 @@ class DigestOutput(BaseModel):
 class DigestAgent:
   def __init__(self,):
     self.client = OpenAI(api_key=os.getenv("GEMINI_API_KEY"), base_url=os.getenv("GEMINI_BASE_URL"))
-    self.model = "gemini-2.5-flash"
+    self.model = os.getenv("GEMINI_MODEL")
     self.system_prompt = SYSTEM_PROMPT
     
   def generate_digest(self, title: str, content: str, article_type: str) -> Optional[DigestOutput]:

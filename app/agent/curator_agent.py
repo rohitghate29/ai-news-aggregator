@@ -42,7 +42,7 @@ Rank articles from most relevant (rank 1) to least relevant. Ensure each article
 class CuratorAgent:
     def __init__(self, user_profile: dict):
         self.client = OpenAI(api_key=os.getenv("GEMINI_API_KEY"), base_url=os.getenv("GEMINI_BASE_URL"))
-        self.model = "gemini-2.5-flash"
+        self.model = os.getenv("GEMINI_MODEL")
         self.user_profile = user_profile
         self.system_prompt = self._build_system_prompt()
 

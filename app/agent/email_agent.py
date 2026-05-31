@@ -64,7 +64,7 @@ Keep it concise (2-3 sentences for the introduction), friendly, and professional
 class EmailAgent:
     def __init__(self, user_profile: dict):
         self.client = OpenAI(api_key=os.getenv("GEMINI_API_KEY"), base_url=os.getenv("GEMINI_BASE_URL"))
-        self.model = "gemini-2.5-flash"
+        self.model = os.getenv("GEMINI_MODEL")
         self.user_profile = user_profile
 
     def generate_introduction(self, ranked_articles: List) -> EmailIntroduction:
