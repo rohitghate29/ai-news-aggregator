@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from sqlalchemy.orm import Session
 import uuid
-from .models import YoutubeVideo, OpenAIAtricle, AnthropicArticle, Digest
+from .models import YoutubeVideo, OpenAIAtricle, AnthropicArticle, HuggingFaceArticle, ClaudeArticle, GoogleAIArticle, GroqArticle, MistralArticle, OllamaArticle, PerplexityArticle, XAIArticle, Digest
 from .connection import get_session
 
 class Repository:
@@ -39,6 +39,110 @@ class Repository:
 
   def create_anthropic_article(self, guid, title, url, description, published_at, category) -> AnthropicArticle:
     article = AnthropicArticle(
+      guid=guid,
+      title=title,
+      url=url,
+      description=description,
+      published_at=published_at,
+      category=category
+    )
+    self.session.merge(article)
+    self.session.commit()
+    return article
+
+  def create_huggingface_article(self, guid, title, url, description, published_at, category) -> HuggingFaceArticle:
+    article = HuggingFaceArticle(
+      guid=guid,
+      title=title,
+      url=url,
+      description=description,
+      published_at=published_at,
+      category=category
+    )
+    self.session.merge(article)
+    self.session.commit()
+    return article
+
+  def create_claude_article(self, guid, title, url, description, published_at, category) -> ClaudeArticle:
+    article = ClaudeArticle(
+      guid=guid,
+      title=title,
+      url=url,
+      description=description,
+      published_at=published_at,
+      category=category
+    )
+    self.session.merge(article)
+    self.session.commit()
+    return article
+
+  def create_google_ai_article(self, guid, title, url, description, published_at, category) -> GoogleAIArticle:
+    article = GoogleAIArticle(
+      guid=guid,
+      title=title,
+      url=url,
+      description=description,
+      published_at=published_at,
+      category=category
+    )
+    self.session.merge(article)
+    self.session.commit()
+    return article
+
+  def create_groq_article(self, guid, title, url, description, published_at, category) -> GroqArticle:
+    article = GroqArticle(
+      guid=guid,
+      title=title,
+      url=url,
+      description=description,
+      published_at=published_at,
+      category=category
+    )
+    self.session.merge(article)
+    self.session.commit()
+    return article
+
+  def create_mistral_article(self, guid, title, url, description, published_at, category) -> MistralArticle:
+    article = MistralArticle(
+      guid=guid,
+      title=title,
+      url=url,
+      description=description,
+      published_at=published_at,
+      category=category
+    )
+    self.session.merge(article)
+    self.session.commit()
+    return article
+
+  def create_ollama_article(self, guid, title, url, description, published_at, category) -> OllamaArticle:
+    article = OllamaArticle(
+      guid=guid,
+      title=title,
+      url=url,
+      description=description,
+      published_at=published_at,
+      category=category
+    )
+    self.session.merge(article)
+    self.session.commit()
+    return article
+
+  def create_perplexity_article(self, guid, title, url, description, published_at, category) -> PerplexityArticle:
+    article = PerplexityArticle(
+      guid=guid,
+      title=title,
+      url=url,
+      description=description,
+      published_at=published_at,
+      category=category
+    )
+    self.session.merge(article)
+    self.session.commit()
+    return article
+
+  def create_xai_article(self, guid, title, url, description, published_at, category) -> XAIArticle:
+    article = XAIArticle(
       guid=guid,
       title=title,
       url=url,
@@ -104,6 +208,262 @@ class Repository:
       self.session.add_all(new_articles)
       self.session.commit()
     return len(new_articles)
+
+  def bulk_create_huggingface_articles(self, articles: List[dict]) -> int:
+    new_articles = []
+    for a in articles:
+        existing = self.session.query(HuggingFaceArticle).filter_by(guid=a["guid"]).first()
+        if not existing:
+            new_articles.append(HuggingFaceArticle(
+                guid=a["guid"],
+                title=a["title"],
+                url=a["url"],
+                published_at=a["published_at"],
+                description=a.get("description", ""),
+                category=a.get("category")
+            ))
+    if new_articles:
+      self.session.add_all(new_articles)
+      self.session.commit()
+    return len(new_articles)
+
+  def huggingface_articles_without_md(self, limit: int = 10) -> list[HuggingFaceArticle]:
+    query = self.session.query(HuggingFaceArticle).filter(HuggingFaceArticle.markdown.is_(None))
+    if limit:
+      query = query.limit(limit)
+    return query.all()
+
+  def update_huggingface_article_markdown(self, guid: str, markdown: str) -> bool:
+    article = self.session.query(HuggingFaceArticle).filter_by(guid=guid).first()
+    if article:
+      article.markdown = markdown
+      self.session.commit()
+      return True
+    return False
+
+  def bulk_create_claude_articles(self, articles: List[dict]) -> int:
+    new_articles = []
+    for a in articles:
+        existing = self.session.query(ClaudeArticle).filter_by(guid=a["guid"]).first()
+        if not existing:
+            new_articles.append(ClaudeArticle(
+                guid=a["guid"],
+                title=a["title"],
+                url=a["url"],
+                published_at=a["published_at"],
+                description=a.get("description", ""),
+                category=a.get("category")
+            ))
+    if new_articles:
+      self.session.add_all(new_articles)
+      self.session.commit()
+    return len(new_articles)
+
+  def claude_articles_without_md(self, limit: int = 10) -> list[ClaudeArticle]:
+    query = self.session.query(ClaudeArticle).filter(ClaudeArticle.markdown.is_(None))
+    if limit:
+      query = query.limit(limit)
+    return query.all()
+
+  def update_claude_article_markdown(self, guid: str, markdown: str) -> bool:
+    article = self.session.query(ClaudeArticle).filter_by(guid=guid).first()
+    if article:
+      article.markdown = markdown
+      self.session.commit()
+      return True
+    return False
+
+  def bulk_create_google_ai_articles(self, articles: List[dict]) -> int:
+    new_articles = []
+    for a in articles:
+        existing = self.session.query(GoogleAIArticle).filter_by(guid=a["guid"]).first()
+        if not existing:
+            new_articles.append(GoogleAIArticle(
+                guid=a["guid"],
+                title=a["title"],
+                url=a["url"],
+                published_at=a["published_at"],
+                description=a.get("description", ""),
+                category=a.get("category")
+            ))
+    if new_articles:
+      self.session.add_all(new_articles)
+      self.session.commit()
+    return len(new_articles)
+
+  def google_ai_articles_without_md(self, limit: int = 10) -> list[GoogleAIArticle]:
+    query = self.session.query(GoogleAIArticle).filter(GoogleAIArticle.markdown.is_(None))
+    if limit:
+      query = query.limit(limit)
+    return query.all()
+
+  def update_google_ai_article_markdown(self, guid: str, markdown: str) -> bool:
+    article = self.session.query(GoogleAIArticle).filter_by(guid=guid).first()
+    if article:
+      article.markdown = markdown
+      self.session.commit()
+      return True
+    return False
+
+  def bulk_create_groq_articles(self, articles: List[dict]) -> int:
+    new_articles = []
+    for a in articles:
+        existing = self.session.query(GroqArticle).filter_by(guid=a["guid"]).first()
+        if not existing:
+            new_articles.append(GroqArticle(
+                guid=a["guid"],
+                title=a["title"],
+                url=a["url"],
+                published_at=a["published_at"],
+                description=a.get("description", ""),
+                category=a.get("category")
+            ))
+    if new_articles:
+      self.session.add_all(new_articles)
+      self.session.commit()
+    return len(new_articles)
+
+  def groq_articles_without_md(self, limit: int = 10) -> list[GroqArticle]:
+    query = self.session.query(GroqArticle).filter(GroqArticle.markdown.is_(None))
+    if limit:
+      query = query.limit(limit)
+    return query.all()
+
+  def update_groq_article_markdown(self, guid: str, markdown: str) -> bool:
+    article = self.session.query(GroqArticle).filter_by(guid=guid).first()
+    if article:
+      article.markdown = markdown
+      self.session.commit()
+      return True
+    return False
+
+  def bulk_create_mistral_articles(self, articles: List[dict]) -> int:
+    new_articles = []
+    for a in articles:
+        existing = self.session.query(MistralArticle).filter_by(guid=a["guid"]).first()
+        if not existing:
+            new_articles.append(MistralArticle(
+                guid=a["guid"],
+                title=a["title"],
+                url=a["url"],
+                published_at=a["published_at"],
+                description=a.get("description", ""),
+                category=a.get("category")
+            ))
+    if new_articles:
+      self.session.add_all(new_articles)
+      self.session.commit()
+    return len(new_articles)
+
+  def mistral_articles_without_md(self, limit: int = 10) -> list[MistralArticle]:
+    query = self.session.query(MistralArticle).filter(MistralArticle.markdown.is_(None))
+    if limit:
+      query = query.limit(limit)
+    return query.all()
+
+  def update_mistral_article_markdown(self, guid: str, markdown: str) -> bool:
+    article = self.session.query(MistralArticle).filter_by(guid=guid).first()
+    if article:
+      article.markdown = markdown
+      self.session.commit()
+      return True
+    return False
+
+  def bulk_create_ollama_articles(self, articles: List[dict]) -> int:
+    new_articles = []
+    for a in articles:
+        existing = self.session.query(OllamaArticle).filter_by(guid=a["guid"]).first()
+        if not existing:
+            new_articles.append(OllamaArticle(
+                guid=a["guid"],
+                title=a["title"],
+                url=a["url"],
+                published_at=a["published_at"],
+                description=a.get("description", ""),
+                category=a.get("category")
+            ))
+    if new_articles:
+      self.session.add_all(new_articles)
+      self.session.commit()
+    return len(new_articles)
+
+  def ollama_articles_without_md(self, limit: int = 10) -> list[OllamaArticle]:
+    query = self.session.query(OllamaArticle).filter(OllamaArticle.markdown.is_(None))
+    if limit:
+      query = query.limit(limit)
+    return query.all()
+
+  def update_ollama_article_markdown(self, guid: str, markdown: str) -> bool:
+    article = self.session.query(OllamaArticle).filter_by(guid=guid).first()
+    if article:
+      article.markdown = markdown
+      self.session.commit()
+      return True
+    return False
+
+  def bulk_create_perplexity_articles(self, articles: List[dict]) -> int:
+    new_articles = []
+    for a in articles:
+        existing = self.session.query(PerplexityArticle).filter_by(guid=a["guid"]).first()
+        if not existing:
+            new_articles.append(PerplexityArticle(
+                guid=a["guid"],
+                title=a["title"],
+                url=a["url"],
+                published_at=a["published_at"],
+                description=a.get("description", ""),
+                category=a.get("category")
+            ))
+    if new_articles:
+      self.session.add_all(new_articles)
+      self.session.commit()
+    return len(new_articles)
+
+  def perplexity_articles_without_md(self, limit: int = 10) -> list[PerplexityArticle]:
+    query = self.session.query(PerplexityArticle).filter(PerplexityArticle.markdown.is_(None))
+    if limit:
+      query = query.limit(limit)
+    return query.all()
+
+  def update_perplexity_article_markdown(self, guid: str, markdown: str) -> bool:
+    article = self.session.query(PerplexityArticle).filter_by(guid=guid).first()
+    if article:
+      article.markdown = markdown
+      self.session.commit()
+      return True
+    return False
+
+  def bulk_create_xai_articles(self, articles: List[dict]) -> int:
+    new_articles = []
+    for a in articles:
+        existing = self.session.query(XAIArticle).filter_by(guid=a["guid"]).first()
+        if not existing:
+            new_articles.append(XAIArticle(
+                guid=a["guid"],
+                title=a["title"],
+                url=a["url"],
+                published_at=a["published_at"],
+                description=a.get("description", ""),
+                category=a.get("category")
+            ))
+    if new_articles:
+      self.session.add_all(new_articles)
+      self.session.commit()
+    return len(new_articles)
+
+  def xai_articles_without_md(self, limit: int = 10) -> list[XAIArticle]:
+    query = self.session.query(XAIArticle).filter(XAIArticle.markdown.is_(None))
+    if limit:
+      query = query.limit(limit)
+    return query.all()
+
+  def update_xai_article_markdown(self, guid: str, markdown: str) -> bool:
+    article = self.session.query(XAIArticle).filter_by(guid=guid).first()
+    if article:
+      article.markdown = markdown
+      self.session.commit()
+      return True
+    return False
   
   def anthropic_articles_without_md(self, limit: int = 10) -> list[AnthropicArticle]:
     query = self.session.query(AnthropicArticle).filter(AnthropicArticle.markdown.is_(None))
@@ -113,6 +473,20 @@ class Repository:
   
   def update_anthropic_article_markdown(self, guid: str, markdown: str) -> bool: 
     article = self.session.query(AnthropicArticle).filter_by(guid=guid).first()
+    if article:
+      article.markdown = markdown
+      self.session.commit()
+      return True
+    return False
+
+  def openai_articles_without_description(self, limit: int = 10) -> list[OpenAIAtricle]:
+    query = self.session.query(OpenAIAtricle).filter(OpenAIAtricle.markdown.is_(None))
+    if limit:
+      query = query.limit(limit)
+    return query.all()
+
+  def update_openai_article_markdown(self, guid: str, markdown: str) -> bool:
+    article = self.session.query(OpenAIAtricle).filter_by(guid=guid).first()
     if article:
       article.markdown = markdown
       self.session.commit()
@@ -157,18 +531,24 @@ class Repository:
                   "published_at": video.published_at
               })
       
-      # openai_articles = self.session.query(OpenAIArticle).all()
-      # for article in openai_articles:
-      #     key = f"openai:{article.guid}"
-      #     if key not in seen_ids:
-      #         articles.append({
-      #             "type": "openai",
-      #             "id": article.guid,
-      #             "title": article.title,
-      #             "url": article.url,
-      #             "content": article.description or "",
-      #             "published_at": article.published_at
-      #         })
+      openai_articles = self.session.query(OpenAIAtricle).filter(
+          OpenAIAtricle.markdown.isnot(None)
+      ).all()
+      openai_added = 0
+      for article in openai_articles:
+          if openai_added >= 3:
+              break
+          key = f"openai:{article.guid}"
+          if key not in seen_ids:
+              articles.append({
+                  "type": "openai",
+                  "id": article.guid,
+                  "title": article.title,
+                  "url": article.url,
+                  "content": article.markdown or "",
+                  "published_at": article.published_at
+              })
+              openai_added += 1
       
       anthropic_articles = self.session.query(AnthropicArticle).filter(
           AnthropicArticle.markdown.isnot(None)
@@ -188,6 +568,158 @@ class Repository:
                   "published_at": article.published_at
               })
               anthropic_added += 1
+              
+      huggingface_articles = self.session.query(HuggingFaceArticle).filter(
+          HuggingFaceArticle.markdown.isnot(None)
+      ).all()
+      huggingface_added = 0
+      for article in huggingface_articles:
+          if huggingface_added >= 3:
+              break
+          key = f"huggingface:{article.guid}"
+          if key not in seen_ids:
+              articles.append({
+                  "type": "huggingface",
+                  "id": article.guid,
+                  "title": article.title,
+                  "url": article.url,
+                  "content": article.markdown or article.description or "",
+                  "published_at": article.published_at
+              })
+              huggingface_added += 1
+
+      claude_articles = self.session.query(ClaudeArticle).filter(
+          ClaudeArticle.markdown.isnot(None)
+      ).all()
+      claude_added = 0
+      for article in claude_articles:
+          if claude_added >= 3:
+              break
+          key = f"claude:{article.guid}"
+          if key not in seen_ids:
+              articles.append({
+                  "type": "claude",
+                  "id": article.guid,
+                  "title": article.title,
+                  "url": article.url,
+                  "content": article.markdown or article.description or "",
+                  "published_at": article.published_at
+              })
+              claude_added += 1
+
+      google_ai_articles = self.session.query(GoogleAIArticle).filter(
+          GoogleAIArticle.markdown.isnot(None)
+      ).all()
+      google_ai_added = 0
+      for article in google_ai_articles:
+          if google_ai_added >= 3:
+              break
+          key = f"google_ai:{article.guid}"
+          if key not in seen_ids:
+              articles.append({
+                  "type": "google_ai",
+                  "id": article.guid,
+                  "title": article.title,
+                  "url": article.url,
+                  "content": article.markdown or article.description or "",
+                  "published_at": article.published_at
+              })
+              google_ai_added += 1
+
+      groq_articles = self.session.query(GroqArticle).filter(
+          GroqArticle.markdown.isnot(None)
+      ).all()
+      groq_added = 0
+      for article in groq_articles:
+          if groq_added >= 3:
+              break
+          key = f"groq:{article.guid}"
+          if key not in seen_ids:
+              articles.append({
+                  "type": "groq",
+                  "id": article.guid,
+                  "title": article.title,
+                  "url": article.url,
+                  "content": article.markdown or article.description or "",
+                  "published_at": article.published_at
+              })
+              groq_added += 1
+
+      mistral_articles = self.session.query(MistralArticle).filter(
+          MistralArticle.markdown.isnot(None)
+      ).all()
+      mistral_added = 0
+      for article in mistral_articles:
+          if mistral_added >= 3:
+              break
+          key = f"mistral:{article.guid}"
+          if key not in seen_ids:
+              articles.append({
+                  "type": "mistral",
+                  "id": article.guid,
+                  "title": article.title,
+                  "url": article.url,
+                  "content": article.markdown or article.description or "",
+                  "published_at": article.published_at
+              })
+              mistral_added += 1
+
+      ollama_articles = self.session.query(OllamaArticle).filter(
+          OllamaArticle.markdown.isnot(None)
+      ).all()
+      ollama_added = 0
+      for article in ollama_articles:
+          if ollama_added >= 3:
+              break
+          key = f"ollama:{article.guid}"
+          if key not in seen_ids:
+              articles.append({
+                  "type": "ollama",
+                  "id": article.guid,
+                  "title": article.title,
+                  "url": article.url,
+                  "content": article.markdown or article.description or "",
+                  "published_at": article.published_at
+              })
+              ollama_added += 1
+
+      perplexity_articles = self.session.query(PerplexityArticle).filter(
+          PerplexityArticle.markdown.isnot(None)
+      ).all()
+      perplexity_added = 0
+      for article in perplexity_articles:
+          if perplexity_added >= 3:
+              break
+          key = f"perplexity:{article.guid}"
+          if key not in seen_ids:
+              articles.append({
+                  "type": "perplexity",
+                  "id": article.guid,
+                  "title": article.title,
+                  "url": article.url,
+                  "content": article.markdown or article.description or "",
+                  "published_at": article.published_at
+              })
+              perplexity_added += 1
+
+      xai_articles = self.session.query(XAIArticle).filter(
+          XAIArticle.markdown.isnot(None)
+      ).all()
+      xai_added = 0
+      for article in xai_articles:
+          if xai_added >= 3:
+              break
+          key = f"xai:{article.guid}"
+          if key not in seen_ids:
+              articles.append({
+                  "type": "xai",
+                  "id": article.guid,
+                  "title": article.title,
+                  "url": article.url,
+                  "content": article.markdown or article.description or "",
+                  "published_at": article.published_at
+              })
+              xai_added += 1
       
       if limit:
           articles = articles[:limit]

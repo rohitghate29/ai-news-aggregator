@@ -1,37 +1,40 @@
 from typing import List
-from .config import YOUTUBE_CHANNELS
 from .scrappers.anthropic import AnthropicScrapper, AnthropicArticle
-from .scrappers.youtube import YoutubeScrapper, ChannelVideo
+from .scrappers.openai import OpenAIScrapper, OpenAIArticle
+from .scrappers.huggingface import HuggingFaceScrapper, HuggingFaceArticle
+from .scrappers.claude import ClaudeScrapper, ClaudeArticle
+from .scrappers.google_ai import GoogleAIScrapper, GoogleAIArticle
+from .scrappers.groq import GroqScrapper, GroqArticle
+from .scrappers.mistral import MistralScrapper, MistralArticle
+from .scrappers.ollama import OllamaScrapper, OllamaArticle
+from .scrappers.perplexity import PerplexityScrapper, PerplexityArticle
+from .scrappers.xai import XAIScrapper, XAIArticle
 from .database.repository import Repository
 
+
 def run_scrappers(hours: int = 24) -> dict:
-  youtube_scrapper = YoutubeScrapper()
   anthropic_scrapper = AnthropicScrapper()
+  openai_scrapper = OpenAIScrapper()
+  huggingface_scrapper = HuggingFaceScrapper()
+  claude_scrapper = ClaudeScrapper()
+  google_ai_scrapper = GoogleAIScrapper()
+  groq_scrapper = GroqScrapper()
+  mistral_scrapper = MistralScrapper()
+  ollama_scrapper = OllamaScrapper()
+  perplexity_scrapper = PerplexityScrapper()
+  xai_scrapper = XAIScrapper()
   repo = Repository()
 
-  youtube_videos = []
-  video_dicts = []
-
-  for channel_id in YOUTUBE_CHANNELS:
-    videos = youtube_scrapper.scrape_channel(channel_id, hours)
-    youtube_videos.extend(videos)
-    video_dicts.extend([
-      {
-        "video_id": v.video_id,
-        "title": v.title,
-        "url": v.url,
-        "channel_id": channel_id,
-        "published_at": v.published_at,
-        "description": v.description,
-        "transcript": v.transcript,
-      }
-      for v in videos
-    ])
-  
   anthropic_articles = anthropic_scrapper.get_articles(hours)
-
-  if video_dicts:
-    repo.bulk_create_youtube_videos(video_dicts)
+  openai_articles = openai_scrapper.get_articles(hours)
+  huggingface_articles = huggingface_scrapper.get_articles(hours)
+  claude_articles = claude_scrapper.get_articles(hours)
+  google_ai_articles = google_ai_scrapper.get_articles(hours)
+  groq_articles = groq_scrapper.get_articles(hours)
+  mistral_articles = mistral_scrapper.get_articles(hours)
+  ollama_articles = ollama_scrapper.get_articles(hours)
+  perplexity_articles = perplexity_scrapper.get_articles(hours)
+  xai_articles = xai_scrapper.get_articles(hours)
 
   if anthropic_articles:
     article_dicts = [
@@ -47,12 +50,155 @@ def run_scrappers(hours: int = 24) -> dict:
     ]
     repo.bulk_create_anthropic_articles(article_dicts)
 
+  if openai_articles:
+    article_dicts = [
+      {
+        "guid": a.guid,
+        "title": a.title,
+        "url": a.url,
+        "published_at": a.published_at,
+        "description": a.description,
+        "category": a.category,
+      }
+      for a in openai_articles
+    ]
+    repo.bulk_create_openai_articles(article_dicts)
+
+  if huggingface_articles:
+    article_dicts = [
+      {
+        "guid": a.guid,
+        "title": a.title,
+        "url": a.url,
+        "published_at": a.published_at,
+        "description": a.description,
+        "category": a.category,
+      }
+      for a in huggingface_articles
+    ]
+    repo.bulk_create_huggingface_articles(article_dicts)
+
+  if claude_articles:
+    article_dicts = [
+      {
+        "guid": a.guid,
+        "title": a.title,
+        "url": a.url,
+        "published_at": a.published_at,
+        "description": a.description,
+        "category": a.category,
+      }
+      for a in claude_articles
+    ]
+    repo.bulk_create_claude_articles(article_dicts)
+
+  if google_ai_articles:
+    article_dicts = [
+      {
+        "guid": a.guid,
+        "title": a.title,
+        "url": a.url,
+        "published_at": a.published_at,
+        "description": a.description,
+        "category": a.category,
+      }
+      for a in google_ai_articles
+    ]
+    repo.bulk_create_google_ai_articles(article_dicts)
+
+  if groq_articles:
+    article_dicts = [
+      {
+        "guid": a.guid,
+        "title": a.title,
+        "url": a.url,
+        "published_at": a.published_at,
+        "description": a.description,
+        "category": a.category,
+      }
+      for a in groq_articles
+    ]
+    repo.bulk_create_groq_articles(article_dicts)
+
+  if mistral_articles:
+    article_dicts = [
+      {
+        "guid": a.guid,
+        "title": a.title,
+        "url": a.url,
+        "published_at": a.published_at,
+        "description": a.description,
+        "category": a.category,
+      }
+      for a in mistral_articles
+    ]
+    repo.bulk_create_mistral_articles(article_dicts)
+
+  if ollama_articles:
+    article_dicts = [
+      {
+        "guid": a.guid,
+        "title": a.title,
+        "url": a.url,
+        "published_at": a.published_at,
+        "description": a.description,
+        "category": a.category,
+      }
+      for a in ollama_articles
+    ]
+    repo.bulk_create_ollama_articles(article_dicts)
+
+  if perplexity_articles:
+    article_dicts = [
+      {
+        "guid": a.guid,
+        "title": a.title,
+        "url": a.url,
+        "published_at": a.published_at,
+        "description": a.description,
+        "category": a.category,
+      }
+      for a in perplexity_articles
+    ]
+    repo.bulk_create_perplexity_articles(article_dicts)
+
+  if xai_articles:
+    article_dicts = [
+      {
+        "guid": a.guid,
+        "title": a.title,
+        "url": a.url,
+        "published_at": a.published_at,
+        "description": a.description,
+        "category": a.category,
+      }
+      for a in xai_articles
+    ]
+    repo.bulk_create_xai_articles(article_dicts)
+
   return {
-    "youtube": youtube_videos,
-    "anthropic": anthropic_articles
+    "anthropic": anthropic_articles,
+    "openai": openai_articles,
+    "huggingface": huggingface_articles,
+    "claude": claude_articles,
+    "google_ai": google_ai_articles,
+    "groq": groq_articles,
+    "mistral": mistral_articles,
+    "ollama": ollama_articles,
+    "perplexity": perplexity_articles,
+    "xai": xai_articles
   }
-  
+
+
 if __name__ == "__main__":
   results = run_scrappers()
-  print(f"Youtube Videos: {len(results['youtube'])}")
-  print(f"Anthropic Articles: {len(results['anthropic'])}")
+  print(f"Anthropic Articles: {len(results.get('anthropic', []))}")
+  print(f"OpenAI Articles: {len(results.get('openai', []))}")
+  print(f"Hugging Face Articles: {len(results.get('huggingface', []))}")
+  print(f"Claude Articles: {len(results.get('claude', []))}")
+  print(f"Google AI Articles: {len(results.get('google_ai', []))}")
+  print(f"Groq Articles: {len(results.get('groq', []))}")
+  print(f"Mistral Articles: {len(results.get('mistral', []))}")
+  print(f"Ollama Articles: {len(results.get('ollama', []))}")
+  print(f"Perplexity Articles: {len(results.get('perplexity', []))}")
+  print(f"XAI Articles: {len(results.get('xai', []))}")
