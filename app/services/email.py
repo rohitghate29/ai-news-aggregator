@@ -139,10 +139,28 @@ def digest_to_html(digest_response) -> str:
     html_parts.append(f'<div class="introduction">{introduction_html}</div>')
     html_parts.append('<hr>')
     
+    source_mapping = {
+        "youtube": "YouTube",
+        "openai": "OpenAI",
+        "anthropic": "Anthropic",
+        "huggingface": "Hugging Face",
+        "claude": "Claude",
+        "google_ai": "Google AI",
+        "groq": "Groq",
+        "mistral": "Mistral AI",
+        "ollama": "Ollama",
+        "perplexity": "Perplexity Hub",
+        "xai": "XAI"
+    }
+
     for article in digest_response.articles:
         html_parts.append(f'<h3>{html.escape(article.title)}</h3>')
         summary_html = markdown.markdown(article.summary, extensions=['extra', 'nl2br'])
         html_parts.append(f'<div>{summary_html}</div>')
+        
+        source_name = source_mapping.get(article.article_type.lower(), article.article_type.title())
+        html_parts.append(f'<p style="color: #666; font-size: 13px; margin: 4px 0 8px 0;"><strong>Source:</strong> {html.escape(source_name)}</p>')
+        
         html_parts.append(f'<p><a href="{html.escape(article.url)}" class="article-link">Read more →</a></p>')
         html_parts.append('<hr>')
     

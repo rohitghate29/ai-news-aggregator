@@ -35,9 +35,25 @@ class EmailDigestResponse(BaseModel):
         markdown += f"{self.introduction.introduction}\n\n"
         markdown += "---\n\n"
         
+        source_mapping = {
+            "youtube": "YouTube",
+            "openai": "OpenAI",
+            "anthropic": "Anthropic",
+            "huggingface": "Hugging Face",
+            "claude": "Claude",
+            "google_ai": "Google AI",
+            "groq": "Groq",
+            "mistral": "Mistral AI",
+            "ollama": "Ollama",
+            "perplexity": "Perplexity Hub",
+            "xai": "XAI"
+        }
+        
         for article in self.articles:
+            source_name = source_mapping.get(article.article_type.lower(), article.article_type.title())
             markdown += f"## {article.title}\n\n"
             markdown += f"{article.summary}\n\n"
+            markdown += f"**Source:** {source_name}\n\n"
             markdown += f"[Read more →]({article.url})\n\n"
             markdown += "---\n\n"
         
