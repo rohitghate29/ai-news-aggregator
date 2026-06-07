@@ -7,7 +7,15 @@ load_dotenv()
 
 from app.runner import run_scrappers
 from app.services.process_anthropic import process_anthropic_markdown
-from app.services.process_youtube import process_youtube_transcripts
+from app.services.process_openai import process_openai_markdown
+from app.services.process_huggingface import process_huggingface_markdown
+from app.services.process_claude import process_claude_markdown
+from app.services.process_google_ai import process_google_ai_markdown
+from app.services.process_groq import process_groq_markdown
+from app.services.process_mistral import process_mistral_markdown
+from app.services.process_ollama import process_ollama_markdown
+from app.services.process_perplexity import process_perplexity_markdown
+from app.services.process_xai import process_xai_markdown
 from app.services.process_digest import process_digests
 from app.services.process_email import send_digest_email
 
@@ -41,10 +49,28 @@ def run_daily_pipeline(hours: int = 24, top_n: int = 10) -> dict:
       results["scrapping"] = {
         "youtube": len(scrapping_results.get("youtube", [])),
         "anthropic": len(scrapping_results.get("anthropic", [])),
+        "openai": len(scrapping_results.get("openai", [])),
+        "huggingface": len(scrapping_results.get("huggingface", [])),
+        "claude": len(scrapping_results.get("claude", [])),
+        "google_ai": len(scrapping_results.get("google_ai", [])),
+        "groq": len(scrapping_results.get("groq", [])),
+        "mistral": len(scrapping_results.get("mistral", [])),
+        "ollama": len(scrapping_results.get("ollama", [])),
+        "perplexity": len(scrapping_results.get("perplexity", [])),
+        "xai": len(scrapping_results.get("xai", [])),
         "digest": len(scrapping_results.get("digest", []))
       }
       logger.info(f"Scrapping completed: YouTube={results['scrapping']['youtube']}")
       logger.info(f"Scrapping completed: Anthropic={results['scrapping']['anthropic']}")
+      logger.info(f"Scrapping completed: OpenAI={results['scrapping']['openai']}")
+      logger.info(f"Scrapping completed: HuggingFace={results['scrapping']['huggingface']}")
+      logger.info(f"Scrapping completed: Claude={results['scrapping']['claude']}")
+      logger.info(f"Scrapping completed: GoogleAI={results['scrapping']['google_ai']}")
+      logger.info(f"Scrapping completed: Groq={results['scrapping']['groq']}")
+      logger.info(f"Scrapping completed: Mistral={results['scrapping']['mistral']}")
+      logger.info(f"Scrapping completed: Ollama={results['scrapping']['ollama']}")
+      logger.info(f"Scrapping completed: Perplexity={results['scrapping']['perplexity']}")
+      logger.info(f"Scrapping completed: XAI={results['scrapping']['xai']}")
       logger.info(f"Scrapping completed: Digest={results['scrapping']['digest']}")
 
       # Step 2: Process Anthropic
@@ -53,11 +79,62 @@ def run_daily_pipeline(hours: int = 24, top_n: int = 10) -> dict:
       results["processing"]["anthropic"] = anthropic_result
       logger.info(f"Anthropic processing completed: {anthropic_result['processed']} articles processed")
       
+      # Step 2b: Process OpenAI
+      logger.info("\nStep 2b: Processing OpenAI descriptions...")
+      openai_result = process_openai_markdown()
+      results["processing"]["openai"] = openai_result
+      logger.info(f"OpenAI processing completed: {openai_result['processed']} articles processed")
+
+      # Step 2c: Process Hugging Face
+      logger.info("\nStep 2c: Processing Hugging Face articles...")
+      huggingface_result = process_huggingface_markdown()
+      results["processing"]["huggingface"] = huggingface_result
+      logger.info(f"Hugging Face processing completed: {huggingface_result['processed']} articles processed")
+
+      # Step 2d: Process Claude
+      logger.info("\nStep 2d: Processing Claude articles...")
+      claude_result = process_claude_markdown()
+      results["processing"]["claude"] = claude_result
+      logger.info(f"Claude processing completed: {claude_result['processed']} articles processed")
+
+      # Step 2e: Process Google AI
+      logger.info("\nStep 2e: Processing Google AI articles...")
+      google_ai_result = process_google_ai_markdown()
+      results["processing"]["google_ai"] = google_ai_result
+      logger.info(f"Google AI processing completed: {google_ai_result['processed']} articles processed")
+
+      # Step 2f: Process Groq
+      logger.info("\nStep 2f: Processing Groq articles...")
+      groq_result = process_groq_markdown()
+      results["processing"]["groq"] = groq_result
+      logger.info(f"Groq processing completed: {groq_result['processed']} articles processed")
+
+      # Step 2g: Process Mistral
+      logger.info("\nStep 2g: Processing Mistral articles...")
+      mistral_result = process_mistral_markdown()
+      results["processing"]["mistral"] = mistral_result
+      logger.info(f"Mistral processing completed: {mistral_result['processed']} articles processed")
+
+      # Step 2h: Process Ollama
+      logger.info("\nStep 2h: Processing Ollama articles...")
+      ollama_result = process_ollama_markdown()
+      results["processing"]["ollama"] = ollama_result
+      logger.info(f"Ollama processing completed: {ollama_result['processed']} articles processed")
+
+      # Step 2i: Process Perplexity
+      logger.info("\nStep 2i: Processing Perplexity articles...")
+      perplexity_result = process_perplexity_markdown()
+      results["processing"]["perplexity"] = perplexity_result
+      logger.info(f"Perplexity processing completed: {perplexity_result['processed']} articles processed")
+
+      # Step 2j: Process XAI
+      logger.info("\nStep 2j: Processing XAI articles...")
+      xai_result = process_xai_markdown()
+      results["processing"]["xai"] = xai_result
+      logger.info(f"XAI processing completed: {xai_result['processed']} articles processed")
+      
       # Step 3: Process YouTube
       logger.info("\nStep 3: Processing YouTube transcripts...")
-      youtube_result = process_youtube_transcripts()
-      results["processing"]["youtube"] = youtube_result
-      logger.info(f"YouTube processing completed: {youtube_result['processed']} videos processed")
       
       # Step 4: Process Digests
       logger.info("\nStep 4: Processing digests...")
