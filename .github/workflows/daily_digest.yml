@@ -2,7 +2,7 @@ name: Daily AI News Aggregator Digest
 
 on:
   schedule:
-    # Runs at 08:00 UTC (13:30 IST) every day
+    # Runs at 10:00 AM IST every day
     - cron: '30 4 * * *'
   workflow_dispatch:
     # Allows manual triggering from the GitHub Actions tab
