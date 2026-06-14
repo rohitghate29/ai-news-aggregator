@@ -11,9 +11,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, field_validator
 
 from app.database.repository import Repository
+from app.services.unsubscribe import parse_unsubscribe_token
 
 # ---------------------------------------------------------------------------
 # Valid provider keys — must match the `type` values used in repository.py
@@ -175,3 +177,29 @@ def delete_user(email: str):
     if not deleted:
         raise HTTPException(status_code=404, detail=f"User '{email}' not found.")
     return None
+
+
+@app.api_route("/unsubscribe", methods=["GET", "POST"], response_class=HTMLResponse,
+               summary="Unsubscribe from daily digest emails")
+def unsubscribe(token: str):
+    """Unsubscribe a recipient using the signed token from their email footer."""
+    email = parse_unsubscribe_token(token)
+    if not email:
+        raise HTTPException(status_code=400, detail="Invalid unsubscribe link.")
+
+    repo = Repository()
+    repo.delete_user_preference(email=email)
+
+    return """
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Unsubscribed</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; max-width: 560px; margin: 48px auto; line-height: 1.5;">
+        <h1>You are unsubscribed</h1>
+        <p>You will no longer receive AI News Aggregator daily digest emails at this address.</p>
+      </body>
+    </html>
+    """

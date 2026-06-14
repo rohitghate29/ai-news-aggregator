@@ -14,6 +14,7 @@ from app.agent.curator_agent import CuratorAgent
 from app.profiles.user_profile import USER_PROFILE
 from app.database.repository import Repository
 from app.services.email import send_email, digest_to_html
+from app.services.unsubscribe import create_unsubscribe_url
 
 
 logging.basicConfig(
@@ -106,8 +107,15 @@ def send_digest_email(
             recipient_name=recipient_name,
             providers=providers,
         )
+        unsubscribe_url = create_unsubscribe_url(recipient_email) if recipient_email else None
         markdown_content = result.to_markdown()
-        html_content = digest_to_html(result)
+        if unsubscribe_url:
+            markdown_content += (
+                "\n\n---\n\n"
+                "You are receiving this because you subscribed to AI News Aggregator.\n\n"
+                f"Unsubscribe: {unsubscribe_url}\n"
+            )
+        html_content = digest_to_html(result, unsubscribe_url=unsubscribe_url)
 
         subject = (
             f"Daily AI News Digest - "
@@ -121,6 +129,10 @@ def send_digest_email(
             body_text=markdown_content,
             body_html=html_content,
             recipients=recipients,
+            headers={
+                "List-Unsubscribe": f"<{unsubscribe_url}>" if unsubscribe_url else None,
+                "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" if unsubscribe_url else None,
+            },
         )
 
         logger.info("Email sent successfully!")
