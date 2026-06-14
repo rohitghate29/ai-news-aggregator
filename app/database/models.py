@@ -137,6 +137,18 @@ class XAIArticle(Base):
   markdown = Column(Text, nullable=True)
   created_at = Column(DateTime, default=datetime.utcnow)
 
+class UserPreference(Base):
+  __tablename__ = "user_preferences"
+
+  id = Column(String, primary_key=True)          # UUID
+  email = Column(String, unique=True, nullable=False, index=True)
+  name = Column(String, nullable=False)
+  # Comma-separated provider keys e.g. "openai,anthropic,google_ai"
+  # NULL means "all providers" (no filter applied)
+  providers = Column(Text, nullable=True)
+  created_at = Column(DateTime, default=datetime.utcnow)
+  updated_at = Column(DateTime, default=datetime.utcnow)
+
 class Digest(Base):
   __tablename__ = "digests"
 
