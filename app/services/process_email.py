@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 from dotenv import load_dotenv
 import sys
 from pathlib import Path
@@ -13,6 +14,7 @@ from app.agent.curator_agent import CuratorAgent
 from app.profiles.user_profile import USER_PROFILE
 from app.database.repository import Repository
 from app.services.email import send_email, digest_to_html
+from app.services.unsubscribe import create_unsubscribe_url
 
 
 logging.basicConfig(
@@ -23,27 +25,46 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def generate_email_digest(hours: int = 24, top_n: int = 10) -> EmailDigestResponse:
-    curator = CuratorAgent(USER_PROFILE)
-    email_agent = EmailAgent(USER_PROFILE)
+def build_recipient_profile(recipient_name: Optional[str] = None) -> dict:
+    profile = USER_PROFILE.copy()
+    if recipient_name:
+        profile["name"] = recipient_name
+    return profile
+
+
+def generate_email_digest(
+    hours: int = 24,
+    top_n: int = 10,
+    recipient_name: Optional[str] = None,
+    providers: Optional[list] = None,
+) -> EmailDigestResponse:
+    recipient_profile = build_recipient_profile(recipient_name)
+    curator = CuratorAgent(recipient_profile)
+    email_agent = EmailAgent(recipient_profile)
     repo = Repository()
-    
+
     digests = repo.get_recent_digests(hours=hours)
+
+    # If a specific provider filter is given, only include digests from those sources
+    if providers:
+        active = set(p.strip().lower() for p in providers)
+        digests = [d for d in digests if d["article_type"] in active]
+
     total = len(digests)
-    
+
     if total == 0:
         logger.warning(f"No digests found from the last {hours} hours")
         raise ValueError("No digests available")
-    
+
     logger.info(f"Ranking {total} digests for email generation")
     ranked_articles = curator.rank_digests(digests)
-    
+
     if not ranked_articles:
         logger.error("Failed to rank digests")
         raise ValueError("Failed to rank articles")
-    
+
     logger.info(f"Generating email digest with top {top_n} articles")
-    
+
     article_details = [
         RankedArticleDetail(
             digest_id=a.digest_id,
@@ -57,46 +78,78 @@ def generate_email_digest(hours: int = 24, top_n: int = 10) -> EmailDigestRespon
         )
         for a in ranked_articles
     ]
-    
+
     email_digest = email_agent.create_email_digest_response(
         ranked_articles=article_details,
         total_ranked=len(ranked_articles),
         limit=top_n
     )
-    
+
     logger.info("Email digest generated successfully")
     logger.info(f"\n=== Email Introduction ===")
     logger.info(email_digest.introduction.greeting)
     logger.info(f"\n{email_digest.introduction.introduction}")
-    
+
     return email_digest
 
 
-def send_digest_email(hours: int = 24, top_n: int = 10) -> dict:
+def send_digest_email(
+    hours: int = 24,
+    top_n: int = 10,
+    recipient_email: Optional[str] = None,
+    recipient_name: Optional[str] = None,
+    providers: Optional[list] = None,
+) -> dict:
     try:
-        result = generate_email_digest(hours=hours, top_n=top_n)
+        result = generate_email_digest(
+            hours=hours,
+            top_n=top_n,
+            recipient_name=recipient_name,
+            providers=providers,
+        )
+        unsubscribe_url = create_unsubscribe_url(recipient_email) if recipient_email else None
         markdown_content = result.to_markdown()
-        html_content = digest_to_html(result)
-        
-        subject = f"Daily AI News Digest - {result.introduction.greeting.split('for ')[-1] if 'for ' in result.introduction.greeting else 'Today'}"
-        
+        if unsubscribe_url:
+            markdown_content += (
+                "\n\n---\n\n"
+                "You are receiving this because you subscribed to AI News Aggregator.\n\n"
+                f"Unsubscribe: {unsubscribe_url}\n"
+            )
+        html_content = digest_to_html(result, unsubscribe_url=unsubscribe_url)
+
+        subject = (
+            f"Daily AI News Digest - "
+            f"{result.introduction.greeting.split('for ')[-1] if 'for ' in result.introduction.greeting else 'Today'}"
+        )
+
+        # Use the provided recipient email or fall back to the env default
+        recipients = [recipient_email] if recipient_email else None
         send_email(
             subject=subject,
             body_text=markdown_content,
-            body_html=html_content
+            body_html=html_content,
+            recipients=recipients,
+            headers={
+                "List-Unsubscribe": f"<{unsubscribe_url}>" if unsubscribe_url else None,
+                "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" if unsubscribe_url else None,
+            },
         )
-        
+
         logger.info("Email sent successfully!")
         return {
             "success": True,
             "subject": subject,
-            "articles_count": len(result.articles)
+            "articles_count": len(result.articles),
+            "recipient": recipient_email or "default",
+            "recipient_name": recipient_name or USER_PROFILE["name"],
         }
     except ValueError as e:
         logger.error(f"Error sending email: {e}")
         return {
             "success": False,
-            "error": str(e)
+            "error": str(e),
+            "recipient": recipient_email or "default",
+            "recipient_name": recipient_name or USER_PROFILE["name"],
         }
 
 

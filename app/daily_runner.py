@@ -18,6 +18,7 @@ from app.services.process_perplexity import process_perplexity_markdown
 from app.services.process_xai import process_xai_markdown
 from app.services.process_digest import process_digests
 from app.services.process_email import send_digest_email
+from app.database.repository import Repository
 
 logging.basicConfig(
     level=logging.INFO,
@@ -142,25 +143,54 @@ def run_daily_pipeline(hours: int = 24, top_n: int = 10) -> dict:
       results["digests"] = digest_result
       logger.info(f"Digest processing completed: {digest_result['processed']} digests created")
       
-      # Step 5: Send Email
-      logger.info("\nStep 5: Sending email...")
-      email_result = send_digest_email(hours=hours, top_n=top_n)
-      results["email"] = email_result
+      # Step 5: Send per-user personalized emails
+      logger.info("\nStep 5: Sending personalized emails...")
+      repo = Repository()
+      users = repo.get_all_user_preferences()
 
-      if email_result["success"]:
-        logger.info(f"Email sent successfully: {email_result['subject']} with {email_result['articles_count']} articles")
+      if not users:
+        # No registered users — send one global email to the default address
+        logger.info("No registered users found. Sending global email to default address.")
+        email_result = send_digest_email(hours=hours, top_n=top_n)
+        results["email"] = [email_result]
+        if email_result["success"]:
+          logger.info(f"Email sent to default: {email_result['subject']}")
+        else:
+          logger.error(f"Default email failed: {email_result.get('error', 'Unknown error')}")
       else:
-        logger.error(f"Email sending failed: {email_result.get('error', 'Unknown error')}")
-      
+        logger.info(f"Sending emails to {len(users)} registered users...")
+        email_results = []
+        for user in users:
+          providers = [p for p in (user.providers or "").split(",") if p] or None
+          logger.info(
+            f"  → {user.email} | providers: {providers or 'all'}"
+          )
+          email_result = send_digest_email(
+            hours=hours,
+            top_n=top_n,
+            recipient_email=user.email,
+            recipient_name=user.name,
+            providers=providers,
+          )
+          email_results.append(email_result)
+          if email_result["success"]:
+            logger.info(f"    ✓ Email sent to {user.email}")
+          else:
+            logger.error(f"    ✗ Failed for {user.email}: {email_result.get('error')}")
+        results["email"] = email_results
+
       # Step 6: Mark as success
       results["success"] = True
-      
+
       # Step 7: Log summary
       end_time = datetime.now()
       duration = (end_time - start_time).total_seconds()
       results["end_time"] = end_time.isoformat()
       results["duration_seconds"] = duration
-      
+
+      sent_count = sum(1 for e in (results["email"] if isinstance(results["email"], list) else [results["email"]]) if e.get("success"))
+      total_emails = len(results["email"]) if isinstance(results["email"], list) else 1
+
       logger.info("\n" + "="*60)
       logger.info("Daily Pipeline Completed Successfully!")
       logger.info(f"Total duration: {duration:.2f} seconds")
@@ -170,17 +200,16 @@ def run_daily_pipeline(hours: int = 24, top_n: int = 10) -> dict:
       logger.info(f"  Digests created: {results['digests'].get('total_digests', 0)}")
       logger.info(f"  Videos summarized: {results['digests'].get('videos_summarized', 0)}")
       logger.info(f"  Articles summarized: {results['digests'].get('articles_summarized', 0)}")
-      logger.info(f"  Email sent: {results['email'].get('success', False)}")
-      logger.info(f"  Email stats: {results['email'].get('stats', {})}")
+      logger.info(f"  Emails sent: {sent_count}/{total_emails}")
       logger.info("="*60)
-      
+
     except Exception as e:
       logger.error(f"\nDaily pipeline failed: {str(e)}", exc_info=True)
       results["success"] = False
-    
+
     return results
-      
-        
+
+
 if __name__ == "__main__":
   result = run_daily_pipeline(hours=24, top_n=10)
-  exit(0 if result["success"] else 1)
+  exit(0 if result["success"] else 1)

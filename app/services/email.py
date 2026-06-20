@@ -12,40 +12,50 @@ MY_EMAIL = os.getenv("MY_EMAIL")
 APP_PASSWORD = os.getenv("APP_PASSWORD")
 
 
-def send_email(subject: str, body_text: str, body_html: str = None, recipients: list = None):
+def send_email(
+    subject: str,
+    body_text: str,
+    body_html: str = None,
+    recipients: list = None,
+    headers: dict = None,
+):
     if recipients is None:
         if not MY_EMAIL:
             raise ValueError("MY_EMAIL environment variable is not set")
         recipients = [MY_EMAIL]
-    
+
     recipients = [r for r in recipients if r is not None]
     if not recipients:
         raise ValueError("No valid recipients provided")
-    
+
     if not MY_EMAIL:
         raise ValueError("MY_EMAIL environment variable is not set")
     if not APP_PASSWORD:
         raise ValueError("APP_PASSWORD environment variable is not set")
-    
+
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"] = MY_EMAIL
     msg["To"] = ", ".join(recipients)
-    
+    if headers:
+        for key, value in headers.items():
+            if value:
+                msg[key] = value
+
     part1 = MIMEText(body_text, "plain")
     msg.attach(part1)
-    
+
     if body_html:
         part2 = MIMEText(body_html, "html")
         msg.attach(part2)
-    
+
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
         smtp.login(MY_EMAIL, APP_PASSWORD)
         smtp.sendmail(MY_EMAIL, recipients, msg.as_string())
 
 
 def markdown_to_html(markdown_text: str) -> str:
-    html = markdown.markdown(markdown_text, extensions=['extra', 'nl2br'])
+    content_html = markdown.markdown(markdown_text, extensions=["extra", "nl2br"])
     return f"""<!DOCTYPE html>
 <html>
 <head>
@@ -53,92 +63,50 @@ def markdown_to_html(markdown_text: str) -> str:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {{
+            background-color: #f5f7fb;
+            color: #202124;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
+            margin: 0;
+            padding: 24px 16px;
+        }}
+        .email-shell {{
             background-color: #ffffff;
+            border: 1px solid #e6e9ef;
+            border-radius: 14px;
+            margin: 0 auto;
+            max-width: 680px;
+            padding: 28px 32px;
         }}
-        h2 {{
-            font-size: 18px;
-            font-weight: 600;
-            color: #1a1a1a;
-            margin-top: 24px;
-            margin-bottom: 8px;
-            line-height: 1.4;
-        }}
-        h3 {{
-            font-size: 16px;
-            font-weight: 600;
-            color: #1a1a1a;
-            margin-top: 20px;
-            margin-bottom: 8px;
-            line-height: 1.4;
+        h2, h3 {{
+            color: #111827;
+            line-height: 1.35;
         }}
         p {{
-            margin: 8px 0;
-            color: #4a4a4a;
-        }}
-        strong {{
-            font-weight: 600;
-            color: #1a1a1a;
-        }}
-        em {{
-            font-style: italic;
-            color: #666;
+            color: #3f4654;
         }}
         a {{
-            color: #0066cc;
+            color: #2563eb;
+            font-weight: 600;
             text-decoration: none;
-            font-weight: 500;
-        }}
-        a:hover {{
-            text-decoration: underline;
-        }}
-        hr {{
-            border: none;
-            border-top: 1px solid #e5e5e5;
-            margin: 20px 0;
-        }}
-        .greeting {{
-            font-size: 16px;
-            font-weight: 500;
-            color: #1a1a1a;
-            margin-bottom: 12px;
-        }}
-        .introduction {{
-            color: #4a4a4a;
-            margin-bottom: 20px;
-        }}
-        .article-link {{
-            display: inline-block;
-            margin-top: 8px;
-            color: #0066cc;
-            font-size: 14px;
         }}
     </style>
 </head>
 <body>
-{html}
+<div class="email-shell">
+{content_html}
+</div>
 </body>
 </html>"""
 
 
-def digest_to_html(digest_response) -> str:
+def digest_to_html(digest_response, unsubscribe_url: str = None) -> str:
     from app.agent.email_agent import EmailDigestResponse
-    
+
     if not isinstance(digest_response, EmailDigestResponse):
-        return markdown_to_html(digest_response.to_markdown() if hasattr(digest_response, 'to_markdown') else str(digest_response))
-    
-    html_parts = []
-    greeting_html = markdown.markdown(digest_response.introduction.greeting, extensions=['extra', 'nl2br'])
-    introduction_html = markdown.markdown(digest_response.introduction.introduction, extensions=['extra', 'nl2br'])
-    html_parts.append(f'<div class="greeting">{greeting_html}</div>')
-    html_parts.append(f'<div class="introduction">{introduction_html}</div>')
-    html_parts.append('<hr>')
-    
+        content = digest_response.to_markdown() if hasattr(digest_response, "to_markdown") else str(digest_response)
+        return markdown_to_html(content)
+
     source_mapping = {
         "youtube": "YouTube",
         "openai": "OpenAI",
@@ -150,103 +118,269 @@ def digest_to_html(digest_response) -> str:
         "mistral": "Mistral AI",
         "ollama": "Ollama",
         "perplexity": "Perplexity Hub",
-        "xai": "XAI"
+        "xai": "XAI",
     }
 
+    greeting_html = markdown.markdown(digest_response.introduction.greeting, extensions=["extra", "nl2br"])
+    introduction_html = markdown.markdown(digest_response.introduction.introduction, extensions=["extra", "nl2br"])
+
+    html_parts = [
+        '<div class="hero">',
+        f'<div class="greeting">{greeting_html}</div>',
+        f'<div class="introduction">{introduction_html}</div>',
+        '</div>',
+        '<div class="content">',
+    ]
+
     for article in digest_response.articles:
-        html_parts.append(f'<h3>{html.escape(article.title)}</h3>')
-        summary_html = markdown.markdown(article.summary, extensions=['extra', 'nl2br'])
-        html_parts.append(f'<div>{summary_html}</div>')
-        
+        summary_html = markdown.markdown(article.summary, extensions=["extra", "nl2br"])
         source_name = source_mapping.get(article.article_type.lower(), article.article_type.title())
-        html_parts.append(f'<p style="color: #666; font-size: 13px; margin: 4px 0 8px 0;"><strong>Source:</strong> {html.escape(source_name)}</p>')
-        
-        html_parts.append(f'<p><a href="{html.escape(article.url)}" class="article-link">Read more →</a></p>')
-        html_parts.append('<hr>')
-    
-    html_content = '\n'.join(html_parts)
-    
+        match_score = round(article.relevance_score * 10)
+        html_parts.extend([
+            '<div class="article-card">',
+            '<div class="article-meta">',
+            '<div class="meta-left">',
+            f'<span class="source-pill">{html.escape(source_name)}</span>',
+            '</div>',
+            '</div>',
+            f'<h3>{html.escape(article.title)}</h3>',
+            f'<div class="summary">{summary_html}</div>',
+            '<div class="card-footer">',
+            '<div class="tags">',
+            f'<span>{html.escape(source_name)}</span>',
+            '<span>AI News</span>',
+            '</div>',
+            f'<a href="{html.escape(article.url)}" class="article-link">Read</a>',
+            '</div>',
+            '</div>',
+        ])
+
+    html_parts.append('</div>')
+
+    if unsubscribe_url:
+        html_parts.append(
+            '<p class="footer">'
+            'You are receiving this because you subscribed to AI News Aggregator. '
+            f'<a href="{html.escape(unsubscribe_url)}">Unsubscribe</a>'
+            '</p>'
+        )
+
+    html_content = "\n".join(html_parts)
+
     return f"""<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        * {{
+            box-sizing: border-box;
+        }}
         body {{
+            background-color: #f3f5fb;
+            color: #080d1d;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+        }}
+        .email-shell {{
+            background-color: #f3f5fb;
             margin: 0 auto;
-            padding: 20px;
+            max-width: 760px;
+            overflow: hidden;
+        }}
+        .preheader {{
+            color: transparent;
+            display: none;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }}
+        .hero {{
+            padding: 30px 42px 16px 42px;
+        }}
+        .greeting {{
+            color: #080d1d;
+            font-size: 22px;
+            font-weight: 800;
+            line-height: 1.3;
+            margin-bottom: 10px;
+        }}
+        .greeting p,
+        .introduction p {{
+            margin: 0;
+        }}
+        .introduction {{
+            color: #2f3441;
+            font-size: 14px;
+            margin: 0;
+        }}
+        .content {{
+            background-color: #f3f5fb;
+            padding: 12px 42px 48px 42px;
+        }}
+        .article-card {{
             background-color: #ffffff;
+            border: 1px solid #c9ced9;
+            border-radius: 10px;
+            margin: 0 0 22px 0;
+            padding: 20px 22px 18px 22px;
+        }}
+        .article-meta {{
+            align-items: center;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }}
+        .meta-left {{
+            align-items: center;
+            display: flex;
+            gap: 10px;
+        }}
+        .source-icon {{
+            color: #0148ff;
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            line-height: 1;
+        }}
+        .source-pill {{
+            background-color: #eef5ff;
+            border-radius: 4px;
+            color: #0148ff;
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 1.2;
+            padding: 3px 8px;
+        }}
+        .score {{
+            color: #161b27;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
         }}
         h3 {{
-            font-size: 16px;
-            font-weight: 600;
-            color: #1a1a1a;
-            margin-top: 20px;
-            margin-bottom: 8px;
-            line-height: 1.4;
+            color: #080d1d;
+            font-size: 18px;
+            font-weight: 800;
+            line-height: 1.3;
+            margin: 0 0 10px 0;
         }}
         p {{
+            color: #242936;
             margin: 8px 0;
-            color: #4a4a4a;
+        }}
+        .summary {{
+            color: #242936;
+            font-size: 14px;
+        }}
+        .summary p {{
+            margin: 8px 0;
         }}
         strong {{
+            color: #111827;
             font-weight: 600;
-            color: #1a1a1a;
         }}
         em {{
+            color: #596174;
             font-style: italic;
-            color: #666;
         }}
         a {{
-            color: #0066cc;
-            text-decoration: none;
+            color: #2563eb;
             font-weight: 500;
+            text-decoration: none;
         }}
         a:hover {{
             text-decoration: underline;
         }}
-        hr {{
-            border: none;
-            border-top: 1px solid #e5e5e5;
-            margin: 20px 0;
-        }}
-        .greeting {{
-            font-size: 16px;
-            font-weight: 500;
-            color: #1a1a1a;
-            margin-bottom: 12px;
-        }}
-        .introduction {{
-            color: #4a4a4a;
-            margin-bottom: 20px;
-        }}
         .article-link {{
+            background-color: #111827;
+            border: 1px solid #020716;
+            border-radius: 4px;
+            color: #ffffff;
             display: inline-block;
-            margin-top: 8px;
-            color: #0066cc;
-            font-size: 14px;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1;
+            min-width: 72px;
+            padding: 11px 16px;
+            text-align: center;
         }}
-        .greeting p {{
+        .article-link:hover {{
+            color: #ffffff;
+            text-decoration: none;
+        }}
+        .card-footer {{
+            border-top: 1px solid #dbe3f2;
+            margin-top: 24px;
+            padding-top: 16px;
+        }}
+        .tags {{
+            display: inline-block;
+            width: 72%;
+        }}
+        .tags span {{
+            background-color: #f5f7fc;
+            border-radius: 4px;
+            color: #1f2430;
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            line-height: 1;
+            margin: 0 6px 6px 0;
+            padding: 7px 9px;
+        }}
+        .footer {{
+            border-top: 1px solid #c9ced9;
+            background-color: #f3f5fb;
+            color: #5f6470;
+            font-size: 12px;
+            line-height: 1.5;
             margin: 0;
+            padding: 28px 32px 44px 32px;
+            text-align: center;
         }}
-        .introduction p {{
-            margin: 0;
+        .footer a {{
+            color: #555;
+            text-decoration: underline;
         }}
-        div {{
-            margin: 8px 0;
-            color: #4a4a4a;
-        }}
-        div p {{
-            margin: 4px 0;
+        @media screen and (max-width: 520px) {{
+            body {{
+                background-color: #f3f5fb;
+                padding: 0;
+            }}
+            .hero,
+            .content,
+            .footer {{
+                padding-left: 18px;
+                padding-right: 18px;
+            }}
+            .article-meta {{
+                display: block;
+            }}
+            .score {{
+                display: block;
+                margin-top: 8px;
+            }}
+            .tags {{
+                display: block;
+                width: 100%;
+            }}
+            .article-link {{
+                margin-top: 10px;
+            }}
         }}
     </style>
 </head>
 <body>
+<div class="preheader">Your personalized AI news digest is ready.</div>
+<div class="email-shell">
 {html_content}
+</div>
 </body>
 </html>"""
 
